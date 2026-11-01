@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!--
+  不写 Filter：MobileLoader / ElleKit 视为「所有进程」注入。
+  真正的范围控制在运行时完成（TBTProcessEligible + 生效范围判断）：
+  只有位于 App 容器、且命中「全部 App / 选中 App」的进程才会改造底栏，
+  SpringBoard、设置 App、扩展进程、守护进程一律跳过。
+-->
+<dict/>
+</plist>
