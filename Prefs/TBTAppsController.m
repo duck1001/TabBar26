@@ -22,6 +22,7 @@
     NSArray<TBTAppInfo *> *_apps;
     NSArray<TBTAppInfo *> *_filtered;
     NSMutableSet<NSString *> *_selected;
+    NSMutableSet<NSString *> *_hiddenIDs;
     UISearchController *_searchController;
 }
 
