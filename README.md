@@ -5,10 +5,12 @@ iOS 26 风格的悬浮玻璃底栏（Liquid Glass Tab Bar），把 App 原生 `U
 
 ## 功能
 
-- 原生底栏改为 iOS 26 的悬浮胶囊玻璃样式：细毛玻璃 + 高光 + 描边 + 投影，标签图标保持原位。
+- 原生底栏改为 iOS 26 的悬浮胶囊玻璃样式：细毛玻璃 + 描边 + 投影，标签图标保持原位。
+- 选中项下方有一枚会滑动的圆角滑块（外胶囊 + 内滑块，弹簧动画），随点击 / 滑动切页移动。
 - 两种生效范围，设置面板里切换：
   - **全部 App**：所有 App 的原生底栏生效。
   - **仅选中的 App**：只对「选择 App」里勾选的 App 生效。
+- 应用列表合并 App Store、巨魔、越狱商店与系统 App，显示真实图标。
 - 设置面板为 SF Symbols 图标风格，附带应用选择列表与搜索。
 - 悬浮底栏上左右滑动切换相邻页面（可在面板关闭）；点按仍然交给系统 tab 按钮。
 - 设置改动即时下发，不用注销设备。
@@ -46,6 +48,27 @@ make package FINALPACKAGE=1 \
   THEOS_PACKAGE_SCHEME=roothide \
   ARCHS=arm64e \
   TARGET=iphone:clang:16.5:15.0
+```
+
+## 代码结构
+
+```
+Tweak.xm                  hook 入口（UITabBar / UITabBarController）
+Core/
+  TBTShared.h             公用声明
+  TBTPrefs.m              偏好读取（cfprefsd + 文件兜底）
+  TBTProcessGuard.m       进程收口
+  TBTTabBarUtils.m        底栏宿主判定
+  TBTBarStyler.m          玻璃外观 + 内部滑块
+  TBTSwipe.m              左右滑动切页
+Prefs/
+  TBTPreferences.m        偏好读写
+  TBTAppCatalog.m         应用清单（App Store / 巨魔 / 越狱 / 系统）
+  TBTIconProvider.m       应用图标
+  TBTUI.m                 面板基类
+  TBTRootController.m     主面板
+  TBTScopeController.m    生效范围
+  TBTAppsController.m     选择 App
 ```
 
 ## 已知限制

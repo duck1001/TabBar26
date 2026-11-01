@@ -115,7 +115,10 @@ static UIColor *TBTColorForIdentifier(NSString *bundleIdentifier) {
     TBTAppInfo *app = _filtered[indexPath.row];
     cell.textLabel.text = app.name;
     cell.detailTextLabel.text = app.bundleIdentifier;
-    cell.imageView.image = TBTSymbolImage(@"app.fill", TBTColorForIdentifier(app.bundleIdentifier));
+    UIImage *icon = TBTIconForApp(app);
+    if (!icon) icon = TBTSymbolImage(@"app.fill", TBTColorForIdentifier(app.bundleIdentifier));
+    cell.imageView.image = icon;
+    cell.imageView.contentMode = UIViewContentModeScaleAspectFit;
 
     TBTAppSwitch *toggle = (TBTAppSwitch *)cell.accessoryView;
     if (![toggle isKindOfClass:[TBTAppSwitch class]]) {

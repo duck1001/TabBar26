@@ -6,13 +6,13 @@ INSTALL_TARGET_PROCESSES = SpringBoard Preferences
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = TabBar26
-TabBar26_FILES = Tweak.xm
+TabBar26_FILES = Tweak.xm Core/TBTPrefs.m Core/TBTProcessGuard.m Core/TBTTabBarUtils.m Core/TBTBarStyler.m Core/TBTSwipe.m
 TabBar26_FRAMEWORKS = UIKit Foundation QuartzCore
-TabBar26_CFLAGS = -fobjc-arc -Os -Wno-deprecated-declarations
+TabBar26_CFLAGS = -fobjc-arc -Os -Wno-deprecated-declarations -ICore
 TabBar26_LDFLAGS = -undefined dynamic_lookup -Wl,-dead_strip
 
 BUNDLE_NAME = TabBar26Prefs
-TabBar26Prefs_FILES = Prefs/TBTPreferences.m Prefs/TBTUI.m Prefs/TBTRootController.m Prefs/TBTScopeController.m Prefs/TBTAppsController.m
+TabBar26Prefs_FILES = Prefs/TBTPreferences.m Prefs/TBTAppCatalog.m Prefs/TBTIconProvider.m Prefs/TBTUI.m Prefs/TBTRootController.m Prefs/TBTScopeController.m Prefs/TBTAppsController.m
 TabBar26Prefs_FRAMEWORKS = UIKit Foundation
 TabBar26Prefs_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -IPrefs
 TabBar26Prefs_INSTALL_PATH = /Library/PreferenceBundles

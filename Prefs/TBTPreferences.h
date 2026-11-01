@@ -2,6 +2,8 @@
 //  TBTPreferences.h
 //  TabBar26Prefs
 //
+//  偏好项读写。应用清单在 TBTAppCatalog，图标在 TBTIconProvider。
+//
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
@@ -20,11 +22,3 @@ void TBTSetSelectedApps(NSArray<NSString *> *bundleIDs);
 
 BOOL TBTGetSwipeEnabled(void);
 void TBTSetSwipeEnabled(BOOL enabled);
-
-@interface TBTAppInfo : NSObject
-@property (nonatomic, copy) NSString *bundleIdentifier;
-@property (nonatomic, copy) NSString *name;
-@end
-
-/// 已安装 App 列表，按名称排序。LSApplicationWorkspace 不可用时回退扫描目录。
-NSArray<TBTAppInfo *> *TBTInstalledApps(void);
