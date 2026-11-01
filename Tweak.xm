@@ -100,7 +100,10 @@ static void TBTOnPrefsChanged(CFNotificationCenterRef center,
 %end
 
 %ctor {
-    if (!TBTProcessEligible()) return;
+    // 不在构造器里直接 return：避免 Logos 生成的注册代码被跳过。
+    if (TBTProcessEligible()) {
+        TBTRecordDiagnosticEvent(@"lastInjected");
+    }
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
                                     NULL,
                                     TBTOnPrefsChanged,

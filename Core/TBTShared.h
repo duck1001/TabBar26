@@ -19,6 +19,9 @@ BOOL TBTEnabledForBundle(NSString *bundleID);
 /// 底栏滑动切页开关，默认开。
 BOOL TBTSwipeEnabled(void);
 
+/// 诊断：把当前 App 的 bundleID + 时间写回偏好域（prefix 形如 lastStyled / lastInjected）。
+void TBTRecordDiagnosticEvent(NSString *prefix);
+
 /// 最近的一个 UITabBarController（responder 链优先，其次 delegate）。
 UITabBarController *TBTContainingTabBarController(UITabBar *bar);
 

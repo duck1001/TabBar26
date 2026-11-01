@@ -32,6 +32,17 @@
     _apps = TBTInstalledApps();
     _selected = [NSMutableSet setWithArray:TBTGetSelectedApps()];
 
+    // 系统内部 App（Clarity*、*ViewService、各种 Picker）图标是纯白空图，直接不显示。
+    // 用户自己装的 App 不检查，避免误伤白底图标的正常应用。
+    _hiddenIDs = [NSMutableSet set];
+    for (TBTAppInfo *app in _apps) {
+        if ([app.bundlePath containsString:@"/Bundle/Application/"]) continue;
+        UIImage *icon = TBTIconForApp(app);
+        if (icon && TBTIconIsBlank(icon)) {
+            [_hiddenIDs addObject:app.bundleIdentifier];
+        }
+    }
+
     _searchController = [[UISearchController alloc] initWithSearchResultsController:nil];
     _searchController.searchResultsUpdater = self;
     _searchController.obscuresBackgroundDuringPresentation = NO;
@@ -60,6 +71,7 @@ static UIColor *TBTColorForIdentifier(NSString *bundleIdentifier) {
     NSString *keyword = _searchController.searchBar.text.lowercaseString ?: @"";
     NSMutableArray<TBTAppInfo *> *result = [NSMutableArray arrayWithCapacity:_apps.count];
     for (TBTAppInfo *app in _apps) {
+        if ([_hiddenIDs containsObject:app.bundleIdentifier]) continue;
         if (keyword.length > 0 &&
             ![app.name.lowercaseString containsString:keyword] &&
             ![app.bundleIdentifier.lowercaseString containsString:keyword]) {

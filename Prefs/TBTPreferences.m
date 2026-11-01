@@ -66,13 +66,16 @@ void TBTSetSwipeEnabled(BOOL enabled) {
     TBTWriteValue(@"swipeEnabled", @(enabled));
 }
 
-NSString *TBTDiagnosticSummary(void) {
-    id bundleID = TBTReadValue(@"lastStyledApp");
+NSString *TBTDiagnosticSummary(NSString *prefix) {
+    NSString *appKey = [prefix stringByAppendingString:@"App"];
+    NSString *atKey = [prefix stringByAppendingString:@"At"];
+
+    id bundleID = TBTReadValue(appKey);
     if (![bundleID isKindOfClass:[NSString class]] || [bundleID length] == 0) {
-        return @"尚未生效";
+        return @"尚未";
     }
 
-    id stamp = TBTReadValue(@"lastStyledAt");
+    id stamp = TBTReadValue(atKey);
     NSString *time = @"";
     if ([stamp isKindOfClass:[NSNumber class]]) {
         NSDate *date = [NSDate dateWithTimeIntervalSinceReferenceDate:[stamp doubleValue]];

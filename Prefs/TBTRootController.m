@@ -10,6 +10,7 @@
 
 typedef NS_ENUM(NSInteger, TBTRootSection) {
     TBTRootSectionHeader = 0,
+    TBTRootSectionStatus,
     TBTRootSectionUsage,
     TBTRootSectionInteraction,
     TBTRootSectionAbout,
@@ -37,14 +38,16 @@ typedef NS_ENUM(NSInteger, TBTRootSection) {
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     switch (section) {
         case TBTRootSectionHeader: return 1;
+        case TBTRootSectionStatus: return 2;
         case TBTRootSectionUsage: return 3;
         case TBTRootSectionInteraction: return 1;
-        case TBTRootSectionAbout: return 3;
+        case TBTRootSectionAbout: return 2;
         default: return 0;
     }
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    if (section == TBTRootSectionStatus) return @"状态";
     if (section == TBTRootSectionUsage) return @"外观";
     if (section == TBTRootSectionInteraction) return @"交互";
     if (section == TBTRootSectionAbout) return @"关于";
@@ -52,6 +55,9 @@ typedef NS_ENUM(NSInteger, TBTRootSection) {
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+    if (section == TBTRootSectionStatus) {
+        return @"打开任意 App 后再回到这里：两行都更新 = 正常；只有「注入」更新 = 注入成功但没生效；都不更新 = 没注入。";
+    }
     if (section == TBTRootSectionUsage) {
         return @"应用到全部 App，或只对勾选的 App 生效。修改后立即下发，无需注销设备。";
     }
@@ -84,6 +90,25 @@ typedef NS_ENUM(NSInteger, TBTRootSection) {
         cell.textLabel.text = @"TabBar26";
         cell.detailTextLabel.text = @"iOS 26 悬浮玻璃底栏 · iOS 15–16 · arm64e";
         cell.imageView.image = TBTSymbolImage(@"capsule.fill", [UIColor systemTealColor]);
+        return cell;
+    }
+
+    if (indexPath.section == TBTRootSectionStatus) {
+        static NSString *identifier = @"TBTRootStatusCell";
+        UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+        if (!cell) {
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:identifier];
+            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+            cell.detailTextLabel.font = [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightRegular];
+            cell.detailTextLabel.adjustsFontSizeToFitWidth = YES;
+            cell.detailTextLabel.minimumScaleFactor = 0.6;
+        }
+        NSString *prefix = (indexPath.row == 0) ? @"lastInjected" : @"lastStyled";
+        NSString *value = TBTDiagnosticSummary(prefix);
+        BOOL active = ![value isEqualToString:@"尚未"];
+        cell.textLabel.text = (indexPath.row == 0) ? @"注入" : @"生效";
+        cell.imageView.image = TBTSymbolImage(@"circle.fill", active ? [UIColor systemGreenColor] : [UIColor systemRedColor]);
+        cell.detailTextLabel.text = value;
         return cell;
     }
 
@@ -155,16 +180,10 @@ typedef NS_ENUM(NSInteger, TBTRootSection) {
         cell.imageView.image = TBTSymbolImage(@"info.circle.fill", [UIColor systemGrayColor]);
         NSString *version = [[NSBundle bundleForClass:[self class]] infoDictionary][@"CFBundleShortVersionString"];
         cell.detailTextLabel.text = version ?: @"0.0.1";
-    } else if (indexPath.row == 1) {
+    } else {
         cell.textLabel.text = @"构建方式";
         cell.imageView.image = TBTSymbolImage(@"hammer.fill", [UIColor systemOrangeColor]);
         cell.detailTextLabel.text = @"GitHub Actions";
-    } else {
-        cell.textLabel.text = @"最近生效";
-        cell.imageView.image = TBTSymbolImage(@"waveform.path.ecg", [UIColor systemPurpleColor]);
-        cell.detailTextLabel.text = TBTDiagnosticSummary();
-        cell.detailTextLabel.adjustsFontSizeToFitWidth = YES;
-        cell.detailTextLabel.minimumScaleFactor = 0.7;
     }
     return cell;
 }

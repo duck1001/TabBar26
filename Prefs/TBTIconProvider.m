@@ -85,8 +85,37 @@ static UIImage *TBTResizedIcon(UIImage *image) {
     }];
 }
 
-UIImage *TBTIconForApp(TBTAppInfo *app) {
-    if (app.bundleIdentifier.length == 0) return nil;
+BOOL TBTIconIsBlank(UIImage *image) {
+    CGImageRef cgImage = image.CGImage;
+    if (!cgImage) return NO;
+
+    const size_t width = 8;
+    const size_t height = 8;
+    unsigned char pixels[width * height * 4] = {0};
+
+    CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+    CGContextRef context = CGBitmapContextCreate(pixels, width, height, 8, width * 4,
+                                                 space, kCGImageAlphaPremultipliedLast);
+    CGColorSpaceRelease(space);
+    if (!context) return NO;
+
+    CGContextSetFillColorWithColor(context, [UIColor whiteColor].CGColor);
+    CGContextFillRect(context, CGRectMake(0, 0, width, height));
+    CGContextDrawImage(context, CGRectMake(0, 0, width, height), cgImage);
+    CGContextRelease(context);
+
+    for (size_t i = 0; i < width * height; i++) {
+        unsigned char r = pixels[i * 4];
+        unsigned char g = pixels[i * 4 + 1];
+        unsigned char b = pixels[i * 4 + 2];
+        unsigned char maxC = MAX(r, MAX(g, b));
+        unsigned char minC = MIN(r, MIN(g, b));
+        if (maxC < 235 || (maxC - minC) > 18) return NO;
+    }
+    return YES;
+}
+
+UIImage *TBTIconForApp(TBTAppInfo *app) {    if (app.bundleIdentifier.length == 0) return nil;
 
     NSCache *cache = TBTIconCache();
     UIImage *cached = [cache objectForKey:app.bundleIdentifier];

@@ -347,16 +347,11 @@ static void TBTApplyAppearance(UITabBar *bar) {
 #pragma mark - Public
 
 /// 每进程只记一次“最近生效的 App”，面板里能看到，用来确认插件到底有没有跑起来。
-static void TBTRecordDiagnostic(void) {
+static void TBTRecordStyledOnce(void) {
     static BOOL recorded = NO;
     if (recorded) return;
     recorded = YES;
-
-    NSString *bundleID = [NSBundle mainBundle].bundleIdentifier ?: @"?";
-    CFStringRef domain = (__bridge CFStringRef)TBTDomain;
-    CFPreferencesSetAppValue(CFSTR("lastStyledApp"), (__bridge CFStringRef)bundleID, domain);
-    CFPreferencesSetAppValue(CFSTR("lastStyledAt"), (__bridge CFPropertyListRef)@(CFAbsoluteTimeGetCurrent()), domain);
-    CFPreferencesAppSynchronize(domain);
+    TBTRecordDiagnosticEvent(@"lastStyled");
 }
 
 void TBTStyleBar(UITabBar *bar) {
@@ -375,7 +370,7 @@ void TBTStyleBar(UITabBar *bar) {
         TBTRemoveGestures(bar);
     }
 
-    TBTRecordDiagnostic();
+    TBTRecordStyledOnce();
 }
 
 void TBTRestoreBar(UITabBar *bar) {
