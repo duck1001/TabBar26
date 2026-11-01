@@ -28,7 +28,12 @@ static UIImage *TBTPrivateIcon(NSString *bundleID) {
     if (scale <= 0) scale = 3.0;
 
     for (NSInteger format = 2; format >= 0; format--) {
-        UIImage *icon = func([UIImage class], selector, bundleID, format, scale);
+        UIImage *icon = nil;
+        @try {
+            icon = func([UIImage class], selector, bundleID, format, scale);
+        } @catch (__unused NSException *exception) {
+            icon = nil;
+        }
         if (icon) return icon;
     }
     return nil;
