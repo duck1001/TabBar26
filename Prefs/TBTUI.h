@@ -5,12 +5,16 @@
 
 #import <UIKit/UIKit.h>
 
+/// Preferences.framework 里的基类。这里只做声明，实际实现由 Preferences 进程在运行时提供，
+/// 面板控制器必须继承它，否则 PSListController controllerForSpecifier: 会因为
+/// initForContentSize: / setParentController: 等 selector 缺失而崩溃。
+@interface PSViewController : UIViewController
+@end
+
 /// 统一的表格式面板基类：insetGrouped 表格 + 约束，风格与 AppPro 面板一致。
-@interface TBTTableViewController : UIViewController <UITableViewDataSource, UITableViewDelegate>
+@interface TBTTableViewController : PSViewController <UITableViewDataSource, UITableViewDelegate>
 
 @property (nonatomic, strong) UITableView *tableView;
-
-- (instancetype)initWithTableStyle:(UITableViewStyle)style;
 
 @end
 

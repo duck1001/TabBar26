@@ -16,28 +16,16 @@ UIImage *TBTSymbolImage(NSString *name, UIColor *tint) {
     return nil;
 }
 
-@implementation TBTTableViewController {
-    UITableViewStyle _tableStyle;
-}
-
-- (instancetype)init {
-    return [self initWithTableStyle:UITableViewStyleInsetGrouped];
-}
-
-- (instancetype)initWithTableStyle:(UITableViewStyle)style {
-    self = [super initWithNibName:nil bundle:nil];
-    if (self) {
-        _tableStyle = style;
-    }
-    return self;
-}
+@implementation TBTTableViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
 
     self.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
 
-    UITableView *tableView = [[UITableView alloc] initWithFrame:CGRectZero style:_tableStyle];
+    // 固定用 insetGrouped：面板可能由 PreferenceLoader 通过 initForContentSize: 创建，
+    // 不能依赖自定义 init 传样式。
+    UITableView *tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleInsetGrouped];
     tableView.translatesAutoresizingMaskIntoConstraints = NO;
     tableView.dataSource = self;
     tableView.delegate = self;
