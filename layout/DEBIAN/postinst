@@ -1,0 +1,55 @@
+#!/bin/sh
+# TabBar26 安装后重建过滤器：
+# ElleKit / MobileLoader 的 Bundles 匹配的是「宿主 App 的 bundle id」，
+# 不是框架 id，所以这里把本机所有 App 的 bundle id 枚举出来写进过滤器。
+set -e
+
+PKG="com.milkway.tabbar26"
+
+# 先按 dpkg 记录定位实际安装路径（roothide 下带 jbroot 前缀）
+DYLIB=$(dpkg -L "$PKG" 2>/dev/null | grep 'DynamicLibraries/TabBar26\.dylib$' | head -n 1 || true)
+
+if [ -z "$DYLIB" ]; then
+    # 退路：从脚本路径推导 jbroot
+    JBROOT=$(printf '%s' "$0" | sed -n 's#\(.*\)/var/lib/dpkg/info/[^/]*$#\1#p')
+    DYLIB="${JBROOT}/Library/MobileSubstrate/DynamicLibraries/TabBar26.dylib"
+fi
+
+PLIST="${DYLIB%.dylib}.plist"
+TMP="${PLIST}.tmp"
+
+{
+    echo '<?xml version="1.0" encoding="UTF-8"?>'
+    echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">'
+    echo '<plist version="1.0">'
+    echo '<dict>'
+    echo '	<key>Filter</key>'
+    echo '	<dict>'
+    echo '		<key>Bundles</key>'
+    echo '		<array>'
+    for info in /var/containers/Bundle/Application/*/*.app/Info.plist \
+                /var/mobile/Containers/Bundle/Application/*/*.app/Info.plist \
+                /Applications/*.app/Info.plist \
+                "${JBROOT}/Applications"/*.app/Info.plist; do
+        [ -f "$info" ] || continue
+        case "$info" in
+            *ViewService*|*PlugIns*|*XPCServices*) continue ;;
+        esac
+        bid=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$info" 2>/dev/null || true)
+        [ -n "$bid" ] && echo "			<string>${bid}</string>"
+    done | sort -u
+    echo '		</array>'
+    echo '		<key>Classes</key>'
+    echo '		<array>'
+    echo '			<string>UITabBar</string>'
+    echo '		</array>'
+    echo '	</dict>'
+    echo '</dict>'
+    echo '</plist>'
+} > "$TMP"
+
+mv "$TMP" "$PLIST"
+chmod 644 "$PLIST"
+echo "TabBar26: filter rebuilt at $PLIST"
+
+exit 0
