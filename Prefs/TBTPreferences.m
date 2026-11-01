@@ -4,6 +4,8 @@
 //
 
 #import "TBTPreferences.h"
+#import "TBTAppCatalog.h"
+#import "TBTNotify.h"
 #import <CoreFoundation/CoreFoundation.h>
 
 NSString *const TBTPreferencesDomain = @"com.milkway.tabbar26";
@@ -84,4 +86,25 @@ NSString *TBTDiagnosticSummary(NSString *prefix) {
         time = [NSString stringWithFormat:@" · %@", [formatter stringFromDate:date]];
     }
     return [NSString stringWithFormat:@"%@%@", bundleID, time];
+}
+    }
+        }
+        if (display.length == 0) {
+            display = [NSString stringWithFormat:@"#%06llx", (unsigned long long)(hash & 0xFFFFFF)];
+        }
+        if (stamp > 0) {
+            NSDate *date = [NSDate dateWithTimeIntervalSince1970:(NSTimeInterval)stamp];
+            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+            formatter.dateFormat = @"HH:mm:ss";
+            return [NSString stringWithFormat:@"%@ · %@", display, [formatter stringFromDate:date]];
+        }
+        return display;
+    }
+
+    // 2) 退回偏好域
+    id bundleID = TBTReadValue([prefix stringByAppendingString:@"App"]);
+    if ([bundleID isKindOfClass:[NSString class]] && [bundleID length] > 0) {
+        return bundleID;
+    }
+    return @"尚未";
 }

@@ -2,11 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <!--
-  注入范围：加载了 UIKit / UITabBar 的进程（即所有 App）。
-  ElleKit 用 CFBundleGetBundleWithIdentifier 判定 Bundles、objc_getClass 判定 Classes，
-  任一命中即注入；绝不写空 Filter（会引起注入器空指针）。
-  真正的范围收口在运行时：TBTProcessEligible + 生效范围判断，
-  SpringBoard、设置 App、扩展与守护进程一律跳过。
+  注入范围：加载了 UIKit / UITabBar 的进程。
+  - Bundles 里是宿主 App 的 bundle id（ElleKit 用 CFBundleGetBundleWithIdentifier 判定；
+    com.apple.UIKit 这类框架 id 不一定能命中，所以同时列几个系统 App 作为兜底样本）
+  - Classes 用 objc_getClass 判定，任一命中即注入
+  空 Filter 会让注入器对 NULL 字典取值，这里绝不写空 Filter。
+  真正的范围收口在运行时：TBTProcessEligible + 生效范围判断。
 -->
 <dict>
 	<key>Filter</key>
@@ -14,6 +15,11 @@
 		<key>Bundles</key>
 		<array>
 			<string>com.apple.UIKit</string>
+			<string>com.apple.mobilesafari</string>
+			<string>com.apple.DocumentsApp</string>
+			<string>com.apple.shortcuts</string>
+			<string>com.apple.mobiletimer</string>
+			<string>com.apple.Health</string>
 		</array>
 		<key>Classes</key>
 		<array>

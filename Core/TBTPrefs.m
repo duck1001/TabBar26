@@ -6,6 +6,7 @@
 //
 
 #import "TBTShared.h"
+#import "TBTNotify.h"
 #import <CoreFoundation/CoreFoundation.h>
 #import <dlfcn.h>
 
@@ -109,4 +110,9 @@ void TBTRecordDiagnosticEvent(NSString *prefix) {
     CFPreferencesSetAppValue((__bridge CFStringRef)appKey, (__bridge CFStringRef)bundleID, domain);
     CFPreferencesSetAppValue((__bridge CFStringRef)atKey, (__bridge CFPropertyListRef)@(CFAbsoluteTimeGetCurrent()), domain);
     CFPreferencesAppSynchronize(domain);
+}
+ 在沙盒外，面板一定能读到
+    NSString *notifyName = [@"com.milkway.tabbar26." stringByAppendingString:prefix];
+    TBTNotifyReport(notifyName, TBTNotifyHash(bundleID));
+    TBTNotifyReport([notifyName stringByAppendingString:@"At"], (uint64_t)[[NSDate date] timeIntervalSince1970]);
 }

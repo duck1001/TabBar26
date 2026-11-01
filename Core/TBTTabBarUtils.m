@@ -24,7 +24,15 @@ UITabBarController *TBTContainingTabBarController(UITabBar *bar) {
 }
 
 BOOL TBTIsRealTabBar(UITabBar *bar) {
-    return TBTContainingTabBarController(bar) != nil;
+    if (TBTContainingTabBarController(bar)) return YES;
+
+    // 兜底：没挂在 UITabBarController 上、但确实贴着窗口底部的原生 UITabBar
+    // （部分 App 用自定义容器托管底栏）
+    if (bar.window && bar.items.count >= 2) {
+        CGRect frame = [bar convertRect:bar.bounds toView:bar.window];
+        if (CGRectGetMaxY(frame) >= CGRectGetHeight(bar.window.bounds) - 2.0) return YES;
+    }
+    return NO;
 }
 
 BOOL TBTShouldStyle(UITabBar *bar) {
