@@ -5,6 +5,8 @@
 
 #import "TBTAppsController.h"
 #import "TBTPreferences.h"
+#import "TBTAppCatalog.h"
+#import "TBTIconProvider.h"
 
 @interface TBTAppSwitch : UISwitch
 @property (nonatomic, copy) NSString *bundleIdentifier;
