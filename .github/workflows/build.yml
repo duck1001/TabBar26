@@ -1,0 +1,64 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tooling
+        run: |
+          brew update -q || true
+          brew install -q ldid xz dpkg || true
+          echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
+          which ldid || true
+          ldid -v | head -2 || true
+
+      - name: Fetch Theos (roothide)
+        run: |
+          git clone --recursive https://github.com/roothide/theos.git "$HOME/theos"
+          git -C "$HOME/theos" submodule update --init --recursive
+          echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
+
+      - name: Fetch iOS SDK 16.5
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/theos/sdks.git "$HOME/sdks"
+          git -C "$HOME/sdks" sparse-checkout set iPhoneOS16.5.sdk
+          echo "SDKROOT=$HOME/sdks/iPhoneOS16.5.sdk" >> "$GITHUB_ENV"
+          ls "$HOME/sdks/iPhoneOS16.5.sdk" | head -5
+
+      - name: Show toolchain
+        run: |
+          clang --version | head -2
+          echo "THEOS=$THEOS"
+          echo "SDKROOT=$SDKROOT"
+
+      - name: Build deb
+        run: |
+          make package \
+            FINALPACKAGE=1 \
+            THEOS_PACKAGE_SCHEME=roothide \
+            ARCHS=arm64e \
+            TARGET=iphone:clang:16.5:15.0 \
+            SYSROOT="$SDKROOT" \
+            ISYSROOT="$SDKROOT"
+          ls -lh packages
+
+      - name: Upload deb
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TabBar26-deb
+          path: packages/*.deb
+          if-no-files-found: warn

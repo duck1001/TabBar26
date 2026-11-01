@@ -1,0 +1,9 @@
+Package: com.milkway.tabbar26
+Name: TabBar26
+Version: 0.0.1
+Architecture: iphoneos-arm64
+Description: iOS 26 风格悬浮玻璃底栏，可全部 App 生效或仅指定 App 生效（iOS 15–16 / arm64e / RootHide）
+Section: Tweaks
+Depends: mobilesubstrate, preferenceloader
+Author: duck1001
+Maintainer: duck1001
