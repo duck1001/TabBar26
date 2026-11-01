@@ -104,14 +104,15 @@ BOOL TBTSwipeEnabled(void) {
 void TBTRecordDiagnosticEvent(NSString *prefix) {
     if (prefix.length == 0) return;
     NSString *bundleID = [NSBundle mainBundle].bundleIdentifier ?: @"?";
+
     CFStringRef domain = (__bridge CFStringRef)TBTDomain;
     NSString *appKey = [prefix stringByAppendingString:@"App"];
     NSString *atKey = [prefix stringByAppendingString:@"At"];
     CFPreferencesSetAppValue((__bridge CFStringRef)appKey, (__bridge CFStringRef)bundleID, domain);
     CFPreferencesSetAppValue((__bridge CFStringRef)atKey, (__bridge CFPropertyListRef)@(CFAbsoluteTimeGetCurrent()), domain);
     CFPreferencesAppSynchronize(domain);
-}
- 在沙盒外，面板一定能读到
+
+    // notify 的 state 在沙盒之外，面板一定能读到
     NSString *notifyName = [@"com.milkway.tabbar26." stringByAppendingString:prefix];
     TBTNotifyReport(notifyName, TBTNotifyHash(bundleID));
     TBTNotifyReport([notifyName stringByAppendingString:@"At"], (uint64_t)[[NSDate date] timeIntervalSince1970]);

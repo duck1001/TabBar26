@@ -27,6 +27,8 @@ static void TBTWriteValue(NSString *key, id value) {
                                          NULL, NULL, true);
 }
 
+#pragma mark - Values
+
 BOOL TBTGetEnabled(void) {
     NSNumber *value = TBTReadValue(@"enabled");
     return value ? [value boolValue] : YES;
@@ -68,26 +70,31 @@ void TBTSetSwipeEnabled(BOOL enabled) {
     TBTWriteValue(@"swipeEnabled", @(enabled));
 }
 
-NSString *TBTDiagnosticSummary(NSString *prefix) {
-    NSString *appKey = [prefix stringByAppendingString:@"App"];
-    NSString *atKey = [prefix stringByAppendingString:@"At"];
+#pragma mark - Diagnostics
 
-    id bundleID = TBTReadValue(appKey);
-    if (![bundleID isKindOfClass:[NSString class]] || [bundleID length] == 0) {
-        return @"尚未";
+static NSArray<TBTAppInfo *> *TBTDiagnosticApps(void) {
+    static NSArray<TBTAppInfo *> *apps = nil;
+    static CFAbsoluteTime stamp = 0;
+    CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+    if (!apps || (now - stamp) > 5.0) {
+        apps = TBTInstalledApps();
+        stamp = now;
     }
-
-    id stamp = TBTReadValue(atKey);
-    NSString *time = @"";
-    if ([stamp isKindOfClass:[NSNumber class]]) {
-        NSDate *date = [NSDate dateWithTimeIntervalSinceReferenceDate:[stamp doubleValue]];
-        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-        formatter.dateFormat = @"HH:mm:ss";
-        time = [NSString stringWithFormat:@" · %@", [formatter stringFromDate:date]];
-    }
-    return [NSString stringWithFormat:@"%@%@", bundleID, time];
+    return apps;
 }
-    }
+
+NSString *TBTDiagnosticSummary(NSString *prefix) {
+    // 1) notify state：跨进程，不受沙盒影响
+    NSString *name = [@"com.milkway.tabbar26." stringByAppendingString:prefix];
+    uint64_t hash = TBTNotifyRead(name);
+    uint64_t stamp = TBTNotifyRead([name stringByAppendingString:@"At"]);
+    if (hash != 0) {
+        NSString *display = nil;
+        for (TBTAppInfo *app in TBTDiagnosticApps()) {
+            if (TBTNotifyHash(app.bundleIdentifier) == hash) {
+                display = app.name;
+                break;
+            }
         }
         if (display.length == 0) {
             display = [NSString stringWithFormat:@"#%06llx", (unsigned long long)(hash & 0xFFFFFF)];
