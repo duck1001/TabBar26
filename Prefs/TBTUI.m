@@ -41,6 +41,8 @@ UIImage *TBTSymbolImage(NSString *name, UIColor *tint) {
     tableView.translatesAutoresizingMaskIntoConstraints = NO;
     tableView.dataSource = self;
     tableView.delegate = self;
+    tableView.rowHeight = UITableViewAutomaticDimension;
+    tableView.estimatedRowHeight = 44.0;
     [self.view addSubview:tableView];
     self.tableView = tableView;
 

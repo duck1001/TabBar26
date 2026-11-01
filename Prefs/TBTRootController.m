@@ -11,6 +11,7 @@
 typedef NS_ENUM(NSInteger, TBTRootSection) {
     TBTRootSectionHeader = 0,
     TBTRootSectionUsage,
+    TBTRootSectionInteraction,
     TBTRootSectionAbout,
     TBTRootSectionCount
 };
@@ -37,6 +38,7 @@ typedef NS_ENUM(NSInteger, TBTRootSection) {
     switch (section) {
         case TBTRootSectionHeader: return 1;
         case TBTRootSectionUsage: return 3;
+        case TBTRootSectionInteraction: return 1;
         case TBTRootSectionAbout: return 2;
         default: return 0;
     }
@@ -44,6 +46,7 @@ typedef NS_ENUM(NSInteger, TBTRootSection) {
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     if (section == TBTRootSectionUsage) return @"外观";
+    if (section == TBTRootSectionInteraction) return @"交互";
     if (section == TBTRootSectionAbout) return @"关于";
     return nil;
 }
@@ -51,6 +54,9 @@ typedef NS_ENUM(NSInteger, TBTRootSection) {
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (section == TBTRootSectionUsage) {
         return @"应用到全部 App，或只对勾选的 App 生效。修改后立即下发，无需注销设备。";
+    }
+    if (section == TBTRootSectionInteraction) {
+        return @"在悬浮底栏上左右滑动可切换相邻页面；点按仍然交给系统 tab 按钮，不拦截触摸。";
     }
     if (section == TBTRootSectionAbout) {
         return @"只调整底栏外观，不改动 App 的布局、手势与交互逻辑；自绘底栏的 App 会自动跳过。";
@@ -120,6 +126,23 @@ typedef NS_ENUM(NSInteger, TBTRootSection) {
         return cell;
     }
 
+    if (indexPath.section == TBTRootSectionInteraction) {
+        static NSString *identifier = @"TBTRootSwipeSwitchCell";
+        UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+        if (!cell) {
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier];
+            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+            UISwitch *toggle = [[UISwitch alloc] init];
+            [toggle addTarget:self action:@selector(swipeSwitchChanged:) forControlEvents:UIControlEventValueChanged];
+            cell.accessoryView = toggle;
+        }
+        UISwitch *toggle = (UISwitch *)cell.accessoryView;
+        toggle.on = TBTGetSwipeEnabled();
+        cell.textLabel.text = @"底栏滑动切页";
+        cell.imageView.image = TBTSymbolImage(@"hand.draw.fill", [UIColor systemPinkColor]);
+        return cell;
+    }
+
     static NSString *identifier = @"TBTRootAboutCell";
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
     if (!cell) {
@@ -157,6 +180,10 @@ typedef NS_ENUM(NSInteger, TBTRootSection) {
 
 - (void)enabledSwitchChanged:(UISwitch *)sender {
     TBTSetEnabled(sender.isOn);
+}
+
+- (void)swipeSwitchChanged:(UISwitch *)sender {
+    TBTSetSwipeEnabled(sender.isOn);
 }
 
 @end

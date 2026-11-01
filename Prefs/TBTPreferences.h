@@ -18,6 +18,9 @@ void TBTSetScope(NSInteger scope);
 NSArray<NSString *> *TBTGetSelectedApps(void);
 void TBTSetSelectedApps(NSArray<NSString *> *bundleIDs);
 
+BOOL TBTGetSwipeEnabled(void);
+void TBTSetSwipeEnabled(BOOL enabled);
+
 @interface TBTAppInfo : NSObject
 @property (nonatomic, copy) NSString *bundleIdentifier;
 @property (nonatomic, copy) NSString *name;

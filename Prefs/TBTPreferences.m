@@ -60,6 +60,15 @@ void TBTSetSelectedApps(NSArray<NSString *> *bundleIDs) {
     TBTWriteValue(@"selectedApps", bundleIDs ?: @[]);
 }
 
+BOOL TBTGetSwipeEnabled(void) {
+    NSNumber *value = TBTReadValue(@"swipeEnabled");
+    return value ? [value boolValue] : YES;
+}
+
+void TBTSetSwipeEnabled(BOOL enabled) {
+    TBTWriteValue(@"swipeEnabled", @(enabled));
+}
+
 #pragma mark - App list
 
 @implementation TBTAppInfo
@@ -101,23 +110,26 @@ NSArray<TBTAppInfo *> *TBTInstalledApps(void) {
         workspaceClass = NSClassFromString(@"LSApplicationWorkspace");
     }
     if (workspaceClass) {
-        id workspace = [workspaceClass performSelector:@selector(defaultWorkspace)];
-        SEL selector = NSSelectorFromString(@"allInstalledApplications");
-        if ([workspace respondsToSelector:selector]) {
-            NSArray *applications = [workspace performSelector:selector];
-            for (id proxy in applications) {
-                NSString *bundleID = nil;
-                NSString *name = nil;
-                @try {
-                    bundleID = [proxy valueForKey:@"applicationIdentifier"];
-                    name = [proxy valueForKey:@"localizedName"];
-                } @catch (__unused NSException *exception) {
-                    continue;
-                }
-                if (![bundleID isKindOfClass:[NSString class]] || bundleID.length == 0) continue;
-                if (![name isKindOfClass:[NSString class]] || name.length == 0) name = bundleID;
-                map[bundleID] = name;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+        SEL defaultSelector = @selector(defaultWorkspace);
+        SEL allSelector = @selector(allInstalledApplications);
+        id workspace = [workspaceClass respondsToSelector:defaultSelector] ? [workspaceClass performSelector:defaultSelector] : nil;
+        NSArray *applications = [workspace respondsToSelector:allSelector] ? [workspace performSelector:allSelector] : nil;
+#pragma clang diagnostic pop
+
+        for (id proxy in applications) {
+            NSString *bundleID = nil;
+            NSString *name = nil;
+            @try {
+                bundleID = [proxy valueForKey:@"applicationIdentifier"];
+                name = [proxy valueForKey:@"localizedName"];
+            } @catch (__unused NSException *exception) {
+                continue;
             }
+            if (![bundleID isKindOfClass:[NSString class]] || bundleID.length == 0) continue;
+            if (![name isKindOfClass:[NSString class]] || name.length == 0) name = bundleID;
+            map[bundleID] = name;
         }
     }
 
