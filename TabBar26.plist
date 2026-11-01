@@ -2,10 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <!--
-  不写 Filter：MobileLoader / ElleKit 视为「所有进程」注入。
-  真正的范围控制在运行时完成（TBTProcessEligible + 生效范围判断）：
-  只有位于 App 容器、且命中「全部 App / 选中 App」的进程才会改造底栏，
-  SpringBoard、设置 App、扩展进程、守护进程一律跳过。
+  注入范围：加载了 UIKit / UITabBar 的进程（即所有 App）。
+  ElleKit 用 CFBundleGetBundleWithIdentifier 判定 Bundles、objc_getClass 判定 Classes，
+  任一命中即注入；绝不写空 Filter（会引起注入器空指针）。
+  真正的范围收口在运行时：TBTProcessEligible + 生效范围判断，
+  SpringBoard、设置 App、扩展与守护进程一律跳过。
 -->
-<dict/>
+<dict>
+	<key>Filter</key>
+	<dict>
+		<key>Bundles</key>
+		<array>
+			<string>com.apple.UIKit</string>
+		</array>
+		<key>Classes</key>
+		<array>
+			<string>UITabBar</string>
+		</array>
+	</dict>
+</dict>
 </plist>
