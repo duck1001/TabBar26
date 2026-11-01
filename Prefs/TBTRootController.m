@@ -39,7 +39,7 @@ typedef NS_ENUM(NSInteger, TBTRootSection) {
         case TBTRootSectionHeader: return 1;
         case TBTRootSectionUsage: return 3;
         case TBTRootSectionInteraction: return 1;
-        case TBTRootSectionAbout: return 2;
+        case TBTRootSectionAbout: return 3;
         default: return 0;
     }
 }
@@ -155,10 +155,16 @@ typedef NS_ENUM(NSInteger, TBTRootSection) {
         cell.imageView.image = TBTSymbolImage(@"info.circle.fill", [UIColor systemGrayColor]);
         NSString *version = [[NSBundle bundleForClass:[self class]] infoDictionary][@"CFBundleShortVersionString"];
         cell.detailTextLabel.text = version ?: @"0.0.1";
-    } else {
+    } else if (indexPath.row == 1) {
         cell.textLabel.text = @"构建方式";
         cell.imageView.image = TBTSymbolImage(@"hammer.fill", [UIColor systemOrangeColor]);
         cell.detailTextLabel.text = @"GitHub Actions";
+    } else {
+        cell.textLabel.text = @"最近生效";
+        cell.imageView.image = TBTSymbolImage(@"waveform.path.ecg", [UIColor systemPurpleColor]);
+        cell.detailTextLabel.text = TBTDiagnosticSummary();
+        cell.detailTextLabel.adjustsFontSizeToFitWidth = YES;
+        cell.detailTextLabel.minimumScaleFactor = 0.7;
     }
     return cell;
 }

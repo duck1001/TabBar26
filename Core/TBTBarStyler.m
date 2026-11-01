@@ -11,6 +11,7 @@
 #import "TBTSwipe.h"
 #import <QuartzCore/QuartzCore.h>
 #import <objc/runtime.h>
+#import <CoreFoundation/CoreFoundation.h>
 
 static char kTBTContainerKey;
 static char kTBTEffectKey;
@@ -99,17 +100,34 @@ static UIView *TBTEnsurePill(UITabBar *bar) {
 }
 
 /// 内部滑块：包住当前选中项（图标 + 文字）的一枚圆角胶囊。
+/// 优先用真实按钮的 frame，找不到就按 item 序号和宽度均分兜底（5 个以上按 4+更多处理）。
 static CGRect TBTPillFrame(UITabBar *bar) {
-    UIView *button = TBTFindSelectedButton(bar, 3);
-    if (!button) return CGRectNull;
-
     CGRect capsule = TBTCapsuleFrame(bar);
-    CGRect buttonFrame = button.frame;
-    CGFloat height = MAX(capsule.size.height - 10.0, 30.0);
-    CGFloat width = MIN(buttonFrame.size.width - 10.0, 74.0);
-    if (width < 44.0) width = MAX(buttonFrame.size.width - 6.0, 36.0);
+    CGRect slot = CGRectZero;
 
-    return CGRectMake(CGRectGetMidX(buttonFrame) - width / 2.0,
+    UIView *button = TBTFindSelectedButton(bar, 3);
+    if (button) {
+        slot = button.frame;
+    } else {
+        NSUInteger count = bar.items.count;
+        if (count == 0) return CGRectNull;
+        NSInteger selected = 0;
+        UITabBarItem *selectedItem = bar.selectedItem;
+        if (selectedItem) {
+            NSUInteger index = [bar.items indexOfObject:selectedItem];
+            if (index != NSNotFound) selected = (NSInteger)index;
+        }
+        NSUInteger slots = MIN(count, (NSUInteger)5);
+        if (selected >= (NSInteger)slots) selected = (NSInteger)slots - 1;
+        CGFloat slotWidth = CGRectGetWidth(bar.bounds) / (CGFloat)slots;
+        slot = CGRectMake(slotWidth * (CGFloat)selected, 0, slotWidth, CGRectGetHeight(bar.bounds));
+    }
+
+    CGFloat height = MAX(capsule.size.height - 10.0, 30.0);
+    CGFloat width = MIN(slot.size.width - 10.0, 74.0);
+    if (width < 44.0) width = MAX(slot.size.width - 6.0, 36.0);
+
+    return CGRectMake(CGRectGetMidX(slot) - width / 2.0,
                       CGRectGetMinY(capsule) + (capsule.size.height - height) / 2.0,
                       width,
                       height);
@@ -188,8 +206,8 @@ static void TBTInstallGlass(UITabBar *bar) {
         effect = [[UIVisualEffectView alloc] initWithFrame:CGRectZero];
         effect.contentView.backgroundColor = [UIColor secondarySystemBackgroundColor];
     } else {
-        // 超薄材质：透出底下内容的颜色，避免在深色 App 里变成一块发灰的实心板
-        UIBlurEffect *blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterial];
+        // 毛玻璃：太透会在浅色 App 里直接消失，这里用薄材质 + 可见描边
+        UIBlurEffect *blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThinMaterial];
         effect = [[UIVisualEffectView alloc] initWithEffect:blur];
     }
     effect.userInteractionEnabled = NO;
@@ -201,8 +219,8 @@ static void TBTInstallGlass(UITabBar *bar) {
     sheen.userInteractionEnabled = NO;
     sheen.tag = 0x7B27;
     sheen.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *tc) {
-        if (tc.userInterfaceStyle == UIUserInterfaceStyleDark) return [UIColor colorWithWhite:1.0 alpha:0.05];
-        return [UIColor colorWithWhite:1.0 alpha:0.12];
+        if (tc.userInterfaceStyle == UIUserInterfaceStyleDark) return [UIColor colorWithWhite:1.0 alpha:0.03];
+        return [UIColor colorWithWhite:1.0 alpha:0.06];
     }];
     [effect.contentView addSubview:sheen];
 
@@ -246,8 +264,8 @@ static void TBTUpdateGlass(UITabBar *bar) {
     UITraitCollection *traits = bar.traitCollection;
     // 浅色内容上必须有一条可见的细边，否则整个胶囊会“消失”在白色背景里
     UIColor *border = [[UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *tc) {
-        if (tc.userInterfaceStyle == UIUserInterfaceStyleDark) return [UIColor colorWithWhite:1.0 alpha:0.18];
-        return [UIColor colorWithWhite:0.0 alpha:0.12];
+        if (tc.userInterfaceStyle == UIUserInterfaceStyleDark) return [UIColor colorWithWhite:1.0 alpha:0.22];
+        return [UIColor colorWithWhite:0.0 alpha:0.18];
     }] resolvedColorWithTraitCollection:traits];
 
     effect.layer.borderWidth = 0.75 / scale;
@@ -305,10 +323,16 @@ static void TBTApplyAppearance(UITabBar *bar) {
             if (@available(iOS 15.0, *)) bar.scrollEdgeAppearance = appearance;
         }
 
-        // 隐藏系统自带的选中底色，交给我们的滑块
+        // 只有滑块能定位时才隐藏系统底色，否则保留系统高亮，避免“什么都没有”
         UIImage *clear = TBTClearImage();
-        if (bar.selectionIndicatorImage != clear) {
-            bar.selectionIndicatorImage = clear;
+        CGRect pillTarget = TBTPillFrame(bar);
+        BOOL hasSelectionTarget = !CGRectIsNull(pillTarget) && pillTarget.size.width > 1.0;
+        if (hasSelectionTarget) {
+            if (bar.selectionIndicatorImage != clear) {
+                bar.selectionIndicatorImage = clear;
+            }
+        } else if (bar.selectionIndicatorImage == clear) {
+            bar.selectionIndicatorImage = nil;
         }
     } else {
         if (!objc_getAssociatedObject(bar, &kTBTSavedImageKey)) {
@@ -321,6 +345,19 @@ static void TBTApplyAppearance(UITabBar *bar) {
 }
 
 #pragma mark - Public
+
+/// 每进程只记一次“最近生效的 App”，面板里能看到，用来确认插件到底有没有跑起来。
+static void TBTRecordDiagnostic(void) {
+    static BOOL recorded = NO;
+    if (recorded) return;
+    recorded = YES;
+
+    NSString *bundleID = [NSBundle mainBundle].bundleIdentifier ?: @"?";
+    CFStringRef domain = (__bridge CFStringRef)TBTDomain;
+    CFPreferencesSetAppValue(CFSTR("lastStyledApp"), (__bridge CFStringRef)bundleID, domain);
+    CFPreferencesSetAppValue(CFSTR("lastStyledAt"), (__bridge CFPropertyListRef)@(CFAbsoluteTimeGetCurrent()), domain);
+    CFPreferencesAppSynchronize(domain);
+}
 
 void TBTStyleBar(UITabBar *bar) {
     if (!TBTShouldStyle(bar)) {
@@ -337,6 +374,8 @@ void TBTStyleBar(UITabBar *bar) {
     } else {
         TBTRemoveGestures(bar);
     }
+
+    TBTRecordDiagnostic();
 }
 
 void TBTRestoreBar(UITabBar *bar) {

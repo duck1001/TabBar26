@@ -22,3 +22,6 @@ void TBTSetSelectedApps(NSArray<NSString *> *bundleIDs);
 
 BOOL TBTGetSwipeEnabled(void);
 void TBTSetSwipeEnabled(BOOL enabled);
+
+/// 诊断：最近一次真正生效的 App（由注入端写入），用于确认插件是否在跑。
+NSString *TBTDiagnosticSummary(void);

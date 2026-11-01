@@ -30,7 +30,6 @@
     self.title = @"选择 App";
 
     _apps = TBTInstalledApps();
-    _filtered = _apps;
     _selected = [NSMutableSet setWithArray:TBTGetSelectedApps()];
 
     _searchController = [[UISearchController alloc] initWithSearchResultsController:nil];
@@ -40,6 +39,8 @@
     self.navigationItem.searchController = _searchController;
     self.navigationItem.hidesSearchBarWhenScrolling = NO;
     self.definesPresentationContext = YES;
+
+    [self rebuildFiltered];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -55,20 +56,29 @@ static UIColor *TBTColorForIdentifier(NSString *bundleIdentifier) {
     return [UIColor colorWithHue:hue saturation:0.52 brightness:0.88 alpha:1.0];
 }
 
-- (void)updateSearchResultsForSearchController:(UISearchController *)searchController {
-    NSString *keyword = searchController.searchBar.text.lowercaseString;
-    if (keyword.length == 0) {
-        _filtered = _apps;
-    } else {
-        NSMutableArray<TBTAppInfo *> *result = [NSMutableArray array];
-        for (TBTAppInfo *app in _apps) {
-            if ([app.name.lowercaseString containsString:keyword] ||
-                [app.bundleIdentifier.lowercaseString containsString:keyword]) {
-                [result addObject:app];
-            }
+- (void)rebuildFiltered {
+    NSString *keyword = _searchController.searchBar.text.lowercaseString ?: @"";
+    NSMutableArray<TBTAppInfo *> *result = [NSMutableArray arrayWithCapacity:_apps.count];
+    for (TBTAppInfo *app in _apps) {
+        if (keyword.length > 0 &&
+            ![app.name.lowercaseString containsString:keyword] &&
+            ![app.bundleIdentifier.lowercaseString containsString:keyword]) {
+            continue;
         }
-        _filtered = result;
+        [result addObject:app];
     }
+    // 勾选过的排在前面
+    [result sortUsingComparator:^NSComparisonResult(TBTAppInfo *a, TBTAppInfo *b) {
+        BOOL selectedA = [_selected containsObject:a.bundleIdentifier];
+        BOOL selectedB = [_selected containsObject:b.bundleIdentifier];
+        if (selectedA != selectedB) return selectedA ? NSOrderedAscending : NSOrderedDescending;
+        return [a.name localizedCaseInsensitiveCompare:b.name];
+    }];
+    _filtered = result;
+}
+
+- (void)updateSearchResultsForSearchController:(UISearchController *)searchController {
+    [self rebuildFiltered];
     [self.tableView reloadData];
 }
 
@@ -144,8 +154,9 @@ static UIColor *TBTColorForIdentifier(NSString *bundleIdentifier) {
     else [_selected removeObject:bundleIdentifier];
 
     [self persistSelection];
+    [self rebuildFiltered];
     [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:0]
-                  withRowAnimation:UITableViewRowAnimationNone];
+                  withRowAnimation:UITableViewRowAnimationAutomatic];
 }
 
 @end

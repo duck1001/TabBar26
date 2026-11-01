@@ -20,11 +20,41 @@ static NSString *TBTJBPathString(NSString *path) {
     return resolved ? [NSString stringWithUTF8String:resolved] : nil;
 }
 
+static BOOL TBTIsRealAppPath(NSString *path) {
+    if (path.length == 0) return NO;
+    if ([path containsString:@"/PlugIns/"] ||
+        [path containsString:@"/XPCServices/"] ||
+        [path containsString:@"ViewService"] ||
+        [path hasPrefix:@"/System/Library/"]) {
+        return NO;
+    }
+
+    static NSArray<NSString *> *prefixes = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        NSMutableArray<NSString *> *list = [NSMutableArray arrayWithArray:@[
+            @"/var/containers/Bundle/Application/",
+            @"/var/mobile/Containers/Bundle/Application/",
+            @"/Applications/",
+            @"/var/jb/Applications/",
+        ]];
+        NSString *jbApplications = TBTJBPathString(@"/Applications/");
+        if (jbApplications.length > 0) [list addObject:jbApplications];
+        prefixes = list;
+    });
+
+    for (NSString *prefix in prefixes) {
+        if ([path hasPrefix:prefix]) return YES;
+    }
+    return NO;
+}
+
 static void TBTAddApp(NSMutableDictionary<NSString *, TBTAppInfo *> *map,
                       NSString *bundleID,
                       NSString *name,
                       NSString *path) {
     if (![bundleID isKindOfClass:[NSString class]] || bundleID.length == 0) return;
+    if (!TBTIsRealAppPath(path)) return;
     TBTAppInfo *existing = map[bundleID];
     if (existing) {
         if (existing.name.length == 0 && name.length > 0) existing.name = name;
@@ -78,9 +108,20 @@ static void TBTCollectFromLaunchServices(NSMutableDictionary<NSString *, TBTAppI
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
     SEL defaultSelector = @selector(defaultWorkspace);
-    SEL allSelector = @selector(allInstalledApplications);
+    SEL installedSelector = @selector(allInstalledApplications);
+    SEL legacySelector = @selector(allApplications);
     id workspace = [workspaceClass respondsToSelector:defaultSelector] ? [workspaceClass performSelector:defaultSelector] : nil;
-    NSArray *applications = [workspace respondsToSelector:allSelector] ? [workspace performSelector:allSelector] : nil;
+
+    NSMutableArray *applications = [NSMutableArray array];
+    if ([workspace respondsToSelector:installedSelector]) {
+        NSArray *installed = [workspace performSelector:installedSelector];
+        if ([installed isKindOfClass:[NSArray class]]) [applications addObjectsFromArray:installed];
+    }
+    // allApplications 会带上系统 App（文件、快捷指令这类），allInstalledApplications 常常没有
+    if ([workspace respondsToSelector:legacySelector]) {
+        NSArray *legacy = [workspace performSelector:legacySelector];
+        if ([legacy isKindOfClass:[NSArray class]]) [applications addObjectsFromArray:legacy];
+    }
 #pragma clang diagnostic pop
 
     for (id proxy in applications) {

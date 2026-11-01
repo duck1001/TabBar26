@@ -65,3 +65,20 @@ BOOL TBTGetSwipeEnabled(void) {
 void TBTSetSwipeEnabled(BOOL enabled) {
     TBTWriteValue(@"swipeEnabled", @(enabled));
 }
+
+NSString *TBTDiagnosticSummary(void) {
+    id bundleID = TBTReadValue(@"lastStyledApp");
+    if (![bundleID isKindOfClass:[NSString class]] || [bundleID length] == 0) {
+        return @"尚未生效";
+    }
+
+    id stamp = TBTReadValue(@"lastStyledAt");
+    NSString *time = @"";
+    if ([stamp isKindOfClass:[NSNumber class]]) {
+        NSDate *date = [NSDate dateWithTimeIntervalSinceReferenceDate:[stamp doubleValue]];
+        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+        formatter.dateFormat = @"HH:mm:ss";
+        time = [NSString stringWithFormat:@" · %@", [formatter stringFromDate:date]];
+    }
+    return [NSString stringWithFormat:@"%@%@", bundleID, time];
+}
